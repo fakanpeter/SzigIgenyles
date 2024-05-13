@@ -13,17 +13,13 @@ import java.util.Random;
 public class SzigRequest {
     @Autowired
     private ZeebeClient zeebeClient;
-    private final boolean happyPath = true;
+    private final boolean happyPath = false;
     private final Random random = new Random();
 
     private HashMap<String, Boolean> generateBooleanHashMap(String s) {
         HashMap<String, Boolean> variables = new HashMap<>();
-        if(happyPath){
-            variables.put(s, true);
-            return variables;
-        }
 
-        if( this.random.nextBoolean() ){
+        if (this.happyPath || this.random.nextBoolean()) {
             variables.put(s, true);
         } else {
             variables.put(s, false);
@@ -33,20 +29,20 @@ public class SzigRequest {
     }
 
     private HashMap<String, Boolean> generateBooleanHashMap(String s, boolean b) {
-        if( this.happyPath ) {
+        if (this.happyPath) {
             b = true;
         }
         HashMap<String, Boolean> variables = new HashMap<>();
-        variables.put(s,b);
+        variables.put(s, b);
         return variables;
     }
 
 
     @ZeebeWorker(type = "SubmitApplication", autoComplete = true)
-    public void SubmitApplication(){
+    public void SubmitApplication() {
         HashMap<String, Boolean> variables = new HashMap<>();
 
-        if(happyPath){
+        if (happyPath) {
             variables.put("isGuardian", true);
             variables.put("photoPossible", true);
             variables.put("fingerprintPossible", true);
@@ -76,27 +72,27 @@ public class SzigRequest {
     }
 
 
-
     @ZeebeWorker(type = "CheckApplication", autoComplete = true)
-    public HashMap<String, Boolean> CheckApplication(){
-         return generateBooleanHashMap("isIdentityOK");
+    public HashMap<String, Boolean> CheckApplication() {
+        return generateBooleanHashMap("isIdentityOK");
     }
 
     @ZeebeWorker(type = "IdentificatePerson", autoComplete = true)
-    public HashMap<String, Boolean> IdentifyPerson(){
+    public HashMap<String, Boolean> IdentifyPerson() {
         return generateBooleanHashMap("isGuardianIdentityOK");
     }
 
     @ZeebeWorker(type = "CheckDeclaration", autoComplete = true)
-    public HashMap<String, Boolean> CheckDeclaration(){
+    public HashMap<String, Boolean> CheckDeclaration() {
         return generateBooleanHashMap("isDeclarationOK");
     }
 
     @ZeebeWorker(type = "CheckIds", autoComplete = true)
-    public HashMap<String, Boolean> CheckIds(){
+    public HashMap<String, Boolean> CheckIds() {
         HashMap<String, Boolean> variables = generateBooleanHashMap("isIdOK");
-        String s  ="idMatch";
-        if( this.random.nextBoolean() ){
+        String s = "idMatch";
+
+        if (happyPath || this.random.nextBoolean()) {
             variables.put(s, true);
         } else {
             variables.put(s, false);
@@ -105,7 +101,7 @@ public class SzigRequest {
     }
 
     @ZeebeWorker(type = "NotifyClient", autoComplete = true)
-    public void NotifyClient(@Variable Boolean isIdOK){
+    public void NotifyClient(@Variable Boolean isIdOK) {
         zeebeClient.newPublishMessageCommand()
                 .messageName("NotifyClient")
                 .correlationKey("notified")
@@ -114,17 +110,17 @@ public class SzigRequest {
     }
 
     @ZeebeWorker(type = "CheckFormat", autoComplete = true)
-    public HashMap<String, Boolean> CheckFormat(){
+    public HashMap<String, Boolean> CheckFormat() {
         return generateBooleanHashMap("isFormatOK");
     }
 
     @ZeebeWorker(type = "CheckContent", autoComplete = true)
-    public HashMap<String, Boolean> CheckContent(){
+    public HashMap<String, Boolean> CheckContent() {
         return generateBooleanHashMap("isContentOK");
     }
 
     @ZeebeWorker(type = "RequestInformation", autoComplete = true)
-    public void RequestInformation(){
+    public void RequestInformation() {
         zeebeClient.newPublishMessageCommand()
                 .messageName("DeclinedRequest")
                 .correlationKey("declined")
@@ -132,22 +128,22 @@ public class SzigRequest {
     }
 
     @ZeebeWorker(type = "CheckPhoto", autoComplete = true)
-    public HashMap<String, Boolean> CheckPhoto(){
+    public HashMap<String, Boolean> CheckPhoto() {
         return generateBooleanHashMap("isPhotoOK");
     }
 
     @ZeebeWorker(type = "TakeFingerprint", autoComplete = true)
-    public HashMap<String, Boolean> TakeFingerprint(){
+    public HashMap<String, Boolean> TakeFingerprint() {
         return generateBooleanHashMap("isFingerprintOK");
     }
 
     @ZeebeWorker(type = "CheckSignature", autoComplete = true)
-    public HashMap<String, Boolean> CheckSignature(){
+    public HashMap<String, Boolean> CheckSignature() {
         return generateBooleanHashMap("isSignatureOK");
     }
 
     @ZeebeWorker(type = "ForwardRequest", autoComplete = true)
-    public void ForwardRequest(@Variable Boolean pickUpInGO){
+    public void ForwardRequest(@Variable Boolean pickUpInGO) {
         zeebeClient.newPublishMessageCommand()
                 .messageName("ForwardRequest")
                 .correlationKey("forward")
@@ -156,7 +152,7 @@ public class SzigRequest {
     }
 
     @ZeebeWorker(type = "ShipIDCard", autoComplete = true)
-    public void ShipIDCard(){
+    public void ShipIDCard() {
         zeebeClient.newPublishMessageCommand()
                 .messageName("ShipIDCard")
                 .correlationKey("sent")
@@ -164,7 +160,7 @@ public class SzigRequest {
     }
 
     @ZeebeWorker(type = "DocumentArrivedToGO", autoComplete = true)
-    public void DocumentArrivedToGO(){
+    public void DocumentArrivedToGO() {
         zeebeClient.newPublishMessageCommand()
                 .messageName("DocumentArrivedToGO")
                 .correlationKey("arrived")
@@ -172,7 +168,7 @@ public class SzigRequest {
     }
 
     @ZeebeWorker(type = "Post", autoComplete = true)
-    public void Post(){
+    public void Post() {
         zeebeClient.newPublishMessageCommand()
                 .messageName("Post")
                 .correlationKey("arrived")
@@ -180,14 +176,11 @@ public class SzigRequest {
     }
 
     @ZeebeWorker(type = "InappropriateID", autoComplete = true)
-    public void InappropriateID(){
+    public void InappropriateID() {
         zeebeClient.newPublishMessageCommand()
                 .messageName("NotifyClient")
                 .correlationKey("notified")
                 .variables(generateBooleanHashMap("isIdOK", false))
                 .send();
-
-        System.out.println("hello");
     }
-
 }
