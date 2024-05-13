@@ -1,6 +1,5 @@
 package com.szigigenyles;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.camunda.zeebe.client.ZeebeClient;
 import io.camunda.zeebe.spring.client.annotation.Variable;
 import io.camunda.zeebe.spring.client.annotation.ZeebeWorker;
@@ -14,10 +13,16 @@ import java.util.Random;
 public class SzigRequest {
     @Autowired
     private ZeebeClient zeebeClient;
+    private final boolean happyPath = true;
     private final Random random = new Random();
 
     private HashMap<String, Boolean> generateBooleanHashMap(String s) {
         HashMap<String, Boolean> variables = new HashMap<>();
+        if(happyPath){
+            variables.put(s, true);
+            return variables;
+        }
+
         if( this.random.nextBoolean() ){
             variables.put(s, true);
         } else {
@@ -27,24 +32,49 @@ public class SzigRequest {
         return variables;
     }
 
+    private HashMap<String, Boolean> generateBooleanHashMap(String s, boolean b) {
+        if( this.happyPath ) {
+            b = true;
+        }
+        HashMap<String, Boolean> variables = new HashMap<>();
+        variables.put(s,b);
+        return variables;
+    }
+
 
     @ZeebeWorker(type = "SubmitApplication", autoComplete = true)
     public void SubmitApplication(){
         HashMap<String, Boolean> variables = new HashMap<>();
-        variables.put("photoPossible", random.nextBoolean());
-        variables.put("fingerprintPossible", random.nextBoolean());
-        variables.put("needTemporary", random.nextBoolean());
-        variables.put("eSim", random.nextBoolean());
-        variables.put("wantESign", random.nextBoolean());
-        variables.put("pickUpInGO", random.nextBoolean());
-        variables.put("handInNeeded", random.nextBoolean());
+
+        if(happyPath){
+            variables.put("isGuardian", true);
+            variables.put("photoPossible", true);
+            variables.put("fingerprintPossible", true);
+            variables.put("needTemporary", true);
+            variables.put("eSim", true);
+            variables.put("wantESign", true);
+            variables.put("pickUpInGO", true);
+            variables.put("handInNeeded", true);
+            variables.put("isDocumentRequired", true);
+        } else {
+            variables.put("isGuardian", random.nextBoolean());
+            variables.put("photoPossible", random.nextBoolean());
+            variables.put("fingerprintPossible", random.nextBoolean());
+            variables.put("needTemporary", random.nextBoolean());
+            variables.put("eSim", random.nextBoolean());
+            variables.put("wantESign", random.nextBoolean());
+            variables.put("pickUpInGO", random.nextBoolean());
+            variables.put("handInNeeded", random.nextBoolean());
+            variables.put("isDocumentRequired", random.nextBoolean());
+        }
 
         zeebeClient.newPublishMessageCommand()
                 .messageName("applicationIn")
-                .correlationKey("")
+                .correlationKey("applicationIn")
                 .variables(variables)
                 .send();
     }
+
 
 
     @ZeebeWorker(type = "CheckApplication", autoComplete = true)
@@ -79,7 +109,7 @@ public class SzigRequest {
         zeebeClient.newPublishMessageCommand()
                 .messageName("NotifyClient")
                 .correlationKey("notified")
-                .variables(isIdOK)
+                .variables(generateBooleanHashMap("isIdOK", isIdOK))
                 .send();
     }
 
@@ -117,11 +147,11 @@ public class SzigRequest {
     }
 
     @ZeebeWorker(type = "ForwardRequest", autoComplete = true)
-    public void ForwardRequest(@Variable String pickUpInGO){
+    public void ForwardRequest(@Variable Boolean pickUpInGO){
         zeebeClient.newPublishMessageCommand()
                 .messageName("ForwardRequest")
                 .correlationKey("forward")
-                .variables(pickUpInGO)
+                .variables(generateBooleanHashMap("pickUpInGO", pickUpInGO))
                 .send();
     }
 
@@ -147,6 +177,17 @@ public class SzigRequest {
                 .messageName("Post")
                 .correlationKey("arrived")
                 .send();
+    }
+
+    @ZeebeWorker(type = "InappropriateID", autoComplete = true)
+    public void InappropriateID(){
+        zeebeClient.newPublishMessageCommand()
+                .messageName("NotifyClient")
+                .correlationKey("notified")
+                .variables(generateBooleanHashMap("isIdOK", false))
+                .send();
+
+        System.out.println("hello");
     }
 
 }

@@ -12,6 +12,7 @@
     <bpmn:messageFlow id="Flow_0ydfk7n" sourceRef="Event_1t3m8vs" targetRef="Participant_1wa2dy7" />
     <bpmn:messageFlow id="Flow_1pgxtm3" sourceRef="Event_0mk3jt8" targetRef="Event_0sor7v7" />
     <bpmn:messageFlow id="Flow_1kh8r07" sourceRef="Event_0bjca2m" targetRef="Event_0ke6jck" />
+    <bpmn:messageFlow id="Flow_1szatrl" sourceRef="Event_0jjsc3e" targetRef="Event_0lhpnlp" />
     <bpmn:textAnnotation id="TextAnnotation_01hoyeo">
       <bpmn:text>TAJ, Adóazonosító, Személyi azonosító</bpmn:text>
     </bpmn:textAnnotation>
@@ -57,9 +58,7 @@
     <bpmn:sequenceFlow id="Flow_00gqxl0" sourceRef="Activity_0u17gik" targetRef="Event_0lhpnlp" />
     <bpmn:sequenceFlow id="Flow_0htg8h1" sourceRef="Event_1m3jzk8" targetRef="Activity_0u17gik" />
     <bpmn:sequenceFlow id="Flow_18e0m58" sourceRef="Event_0lhpnlp" targetRef="Gateway_066qgbv" />
-    <bpmn:sequenceFlow id="Flow_0eg43vv" name="Igen" sourceRef="Gateway_066qgbv" targetRef="Event_17hpy3r">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=isIdOk</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0eg43vv" name="Igen" sourceRef="Gateway_066qgbv" targetRef="Event_17hpy3r" />
     <bpmn:sequenceFlow id="Flow_1jljsz1" sourceRef="Event_165hhzg" targetRef="Gateway_10t6akl" />
     <bpmn:sequenceFlow id="Flow_15b1ms0" sourceRef="Gateway_10t6akl" targetRef="Event_0am23hv" />
     <bpmn:sequenceFlow id="Flow_1lxsowb" sourceRef="Event_17hpy3r" targetRef="Gateway_10t6akl" />
@@ -69,18 +68,20 @@
     <bpmn:sequenceFlow id="Flow_0amtjdj" sourceRef="Event_03xp3lc" targetRef="Activity_0x3nzyv" />
     <bpmn:sendTask id="Activity_0u17gik" name="Kérelem beadása">
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="SubmitApplication" retries="0" />
+        <zeebe:taskDefinition type="SubmitApplication" retries="1" />
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_0htg8h1</bpmn:incoming>
       <bpmn:outgoing>Flow_00gqxl0</bpmn:outgoing>
     </bpmn:sendTask>
-    <bpmn:sequenceFlow id="Flow_0igjjxa" name="Nem" sourceRef="Gateway_066qgbv" targetRef="Gateway_1rvy7r6" />
+    <bpmn:sequenceFlow id="Flow_0igjjxa" name="Nem" sourceRef="Gateway_066qgbv" targetRef="Gateway_1rvy7r6">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=isIdOK</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
     <bpmn:eventBasedGateway id="Gateway_1rvy7r6" name="Okmányirodai átvétel?">
       <bpmn:incoming>Flow_0igjjxa</bpmn:incoming>
       <bpmn:outgoing>Flow_1wc3rtf</bpmn:outgoing>
       <bpmn:outgoing>Flow_01pjjd1</bpmn:outgoing>
     </bpmn:eventBasedGateway>
-    <bpmn:exclusiveGateway id="Gateway_066qgbv" name="Elutasított kérelem?" default="Flow_0igjjxa">
+    <bpmn:exclusiveGateway id="Gateway_066qgbv" name="Elutasított kérelem?" default="Flow_0eg43vv">
       <bpmn:incoming>Flow_18e0m58</bpmn:incoming>
       <bpmn:outgoing>Flow_0eg43vv</bpmn:outgoing>
       <bpmn:outgoing>Flow_0igjjxa</bpmn:outgoing>
@@ -125,7 +126,7 @@
     </bpmn:endEvent>
     <bpmn:intermediateThrowEvent id="Event_0bs1lre" name="Ügyfél értesítése">
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="DocumentArrivedToGO" />
+        <zeebe:taskDefinition type="DocumentArrivedToGO" retries="1" />
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_18b0y54</bpmn:incoming>
       <bpmn:outgoing>Flow_1vpsamv</bpmn:outgoing>
@@ -134,7 +135,7 @@
     <bpmn:sequenceFlow id="Flow_1vpsamv" sourceRef="Event_0bs1lre" targetRef="Gateway_0sj0547" />
     <bpmn:intermediateThrowEvent id="Event_0mk3jt8" name="Kormányablakba postázás">
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="ShipIDCard" retries="=1" />
+        <zeebe:taskDefinition type="ShipIDCard" retries="1" />
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_1kfda1v</bpmn:incoming>
       <bpmn:outgoing>Flow_18b0y54</bpmn:outgoing>
@@ -167,7 +168,7 @@
     </bpmn:sequenceFlow>
     <bpmn:intermediateThrowEvent id="Event_030iol1" name="Ügyfélnek postázás">
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="Post" />
+        <zeebe:taskDefinition type="Post" retries="1" />
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_1nkfvq3</bpmn:incoming>
       <bpmn:outgoing>Flow_18io3m4</bpmn:outgoing>
@@ -401,17 +402,17 @@
       <bpmn:outgoing>Flow_0lawprw</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:sequenceFlow id="Flow_1w8j6an" name="Igen" sourceRef="Gateway_0xdtwrg" targetRef="Activity_1gg8taa">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=isFormOK</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=isFormatOK</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:dataStoreReference id="DataStoreReference_0i3o59b" name="Személyiadat és lakcímnyilvántartás" />
-    <bpmn:exclusiveGateway id="Gateway_1mskn0i">
+    <bpmn:exclusiveGateway id="Gateway_1mskn0i" default="Flow_12e51jd">
       <bpmn:incoming>Flow_0g11drf</bpmn:incoming>
       <bpmn:incoming>Flow_17cxdsj</bpmn:incoming>
       <bpmn:incoming>Flow_1g51g0z</bpmn:incoming>
       <bpmn:incoming>Flow_0lawprw</bpmn:incoming>
       <bpmn:incoming>Flow_1qhxe22</bpmn:incoming>
       <bpmn:incoming>Flow_1v9hm3k</bpmn:incoming>
-      <bpmn:outgoing>Flow_1g56cku</bpmn:outgoing>
+      <bpmn:outgoing>Flow_12e51jd</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:sequenceFlow id="Flow_0g11drf" name="Nem" sourceRef="Gateway_0e54f6m" targetRef="Gateway_1mskn0i" />
     <bpmn:sequenceFlow id="Flow_17cxdsj" name="Nem" sourceRef="Gateway_0nc7z39" targetRef="Gateway_1mskn0i" />
@@ -420,12 +421,11 @@
     <bpmn:sequenceFlow id="Flow_1qhxe22" name="Nem" sourceRef="Gateway_0xdxupe" targetRef="Gateway_1mskn0i" />
     <bpmn:endEvent id="Event_13vocp7" name="Kérelem elutasítása">
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="RequestInformation" />
+        <zeebe:taskDefinition type="RequestInformation" retries="1" />
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_1g56cku</bpmn:incoming>
+      <bpmn:incoming>Flow_1x0v2nz</bpmn:incoming>
       <bpmn:messageEventDefinition id="MessageEventDefinition_0rkrt25" />
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_1g56cku" sourceRef="Gateway_1mskn0i" targetRef="Event_13vocp7" />
     <bpmn:exclusiveGateway id="Gateway_00ud0p4" name="Tartalmi ellenőrzés rendben?" default="Flow_1v9hm3k">
       <bpmn:incoming>Flow_00kx094</bpmn:incoming>
       <bpmn:outgoing>Flow_1v9hm3k</bpmn:outgoing>
@@ -456,26 +456,18 @@
     </bpmn:task>
     <bpmn:sequenceFlow id="Flow_106xqp1" sourceRef="Activity_0ar8m1n" targetRef="Activity_008nuel" />
     <bpmn:intermediateCatchEvent id="Event_0sor7v7" name="Igazolvány beérkezése">
-      <bpmn:incoming>Flow_09rlm0f</bpmn:incoming>
+      <bpmn:incoming>Flow_1pwbi0w</bpmn:incoming>
       <bpmn:outgoing>Flow_1oqeql4</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEventDefinition_10o8nr3" messageRef="Message_2a6gm3b" />
     </bpmn:intermediateCatchEvent>
     <bpmn:sequenceFlow id="Flow_1oqeql4" sourceRef="Event_0sor7v7" targetRef="Activity_0ar8m1n" />
-    <bpmn:intermediateCatchEvent id="Event_0g77p2t" name="Várakozás az új igazolványra">
-      <bpmn:incoming>Flow_1pwbi0w</bpmn:incoming>
-      <bpmn:outgoing>Flow_09rlm0f</bpmn:outgoing>
-      <bpmn:timerEventDefinition id="TimerEventDefinition_0ml19sq">
-        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P30D</bpmn:timeDuration>
-      </bpmn:timerEventDefinition>
-    </bpmn:intermediateCatchEvent>
-    <bpmn:sequenceFlow id="Flow_09rlm0f" sourceRef="Event_0g77p2t" targetRef="Event_0sor7v7" />
     <bpmn:exclusiveGateway id="Gateway_1bwol8w" name="Új igazolvány Kormányablakban kerül átvételre?" default="Flow_1gkcvcw">
       <bpmn:incoming>Flow_06uaxlq</bpmn:incoming>
       <bpmn:outgoing>Flow_1gkcvcw</bpmn:outgoing>
       <bpmn:outgoing>Flow_1pwbi0w</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:sequenceFlow id="Flow_1gkcvcw" name="Nem" sourceRef="Gateway_1bwol8w" targetRef="Gateway_1ahyzts" />
-    <bpmn:sequenceFlow id="Flow_1pwbi0w" name="Igen" sourceRef="Gateway_1bwol8w" targetRef="Event_0g77p2t">
+    <bpmn:sequenceFlow id="Flow_1pwbi0w" name="Igen" sourceRef="Gateway_1bwol8w" targetRef="Event_0sor7v7">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=pickUpInGO</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:exclusiveGateway id="Gateway_0vmjahc" default="Flow_06uaxlq">
@@ -624,6 +616,16 @@
       </bpmn:task>
       <bpmn:sequenceFlow id="Flow_0w4zqzv" sourceRef="Activity_1hd42mr" targetRef="Activity_02bq5ya" />
     </bpmn:subProcess>
+    <bpmn:intermediateThrowEvent id="Event_0jjsc3e" name="Értesítés nem megfelelő azonosítókról">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="InappropriateID" retries="1" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_12e51jd</bpmn:incoming>
+      <bpmn:outgoing>Flow_1x0v2nz</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_0q6r5zl" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:sequenceFlow id="Flow_12e51jd" sourceRef="Gateway_1mskn0i" targetRef="Event_0jjsc3e" />
+    <bpmn:sequenceFlow id="Flow_1x0v2nz" sourceRef="Event_0jjsc3e" targetRef="Event_13vocp7" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_0aqu5h7">
@@ -654,12 +656,6 @@
         <dc:Bounds x="850" y="1825" width="50" height="50" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="831" y="1882" width="89" height="40" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_13dbxtq_di" bpmnElement="Event_0g77p2t">
-        <dc:Bounds x="952" y="1832" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="931" y="1875" width="78" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_093bzzl_di" bpmnElement="Event_0sor7v7">
@@ -694,7 +690,7 @@
       <bpmndi:BPMNShape id="Event_1lep87l_di" bpmnElement="Event_13vocp7">
         <dc:Bounds x="2012" y="552" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1948" y="556" width="54" height="27" />
+          <dc:Bounds x="2058" y="556" width="54" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_1mskn0i_di" bpmnElement="Gateway_1mskn0i" isMarkerVisible="true">
@@ -849,6 +845,12 @@
         <dc:Bounds x="1735" y="1195" width="50" height="50" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1727" y="1158" width="66" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0gtjkh7" bpmnElement="Event_0jjsc3e">
+        <dc:Bounds x="1942" y="612" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1985" y="640" width="69" height="40" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0v4w91n_di" bpmnElement="Activity_02b7h4j" isExpanded="true">
@@ -1098,14 +1100,10 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1pwbi0w_di" bpmnElement="Flow_1pwbi0w">
         <di:waypoint x="900" y="1850" />
-        <di:waypoint x="952" y="1850" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="915" y="1832" width="22" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_09rlm0f_di" bpmnElement="Flow_09rlm0f">
-        <di:waypoint x="988" y="1850" />
         <di:waypoint x="1062" y="1850" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="929" y="1832" width="22" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1oqeql4_di" bpmnElement="Flow_1oqeql4">
         <di:waypoint x="1098" y="1850" />
@@ -1144,11 +1142,6 @@
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1961" y="692" width="24" height="14" />
         </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1g56cku_di" bpmnElement="Flow_1g56cku">
-        <di:waypoint x="1855" y="630" />
-        <di:waypoint x="2030" y="630" />
-        <di:waypoint x="2030" y="588" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_1qhxe22_di" bpmnElement="Flow_1qhxe22">
         <di:waypoint x="460" y="825" />
@@ -1377,6 +1370,15 @@
       <bpmndi:BPMNEdge id="Flow_1d7d914_di" bpmnElement="Flow_1d7d914">
         <di:waypoint x="1705" y="1220" />
         <di:waypoint x="1735" y="1220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_12e51jd_di" bpmnElement="Flow_12e51jd">
+        <di:waypoint x="1855" y="630" />
+        <di:waypoint x="1942" y="630" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1x0v2nz_di" bpmnElement="Flow_1x0v2nz">
+        <di:waypoint x="1978" y="630" />
+        <di:waypoint x="2030" y="630" />
+        <di:waypoint x="2030" y="588" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Participant_0gvrl51_di" bpmnElement="Participant_0gvrl51" isHorizontal="true">
         <dc:Bounds x="160" y="2060" width="2000" height="220" />
@@ -1621,8 +1623,8 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_03fv73m_di" bpmnElement="Flow_03fv73m">
         <di:waypoint x="2030" y="552" />
-        <di:waypoint x="2030" y="505" />
-        <di:waypoint x="1260" y="505" />
+        <di:waypoint x="2030" y="520" />
+        <di:waypoint x="1260" y="520" />
         <di:waypoint x="1260" y="444" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0p5rrts_di" bpmnElement="Flow_0p5rrts">
@@ -1675,6 +1677,12 @@
         <dc:Bounds x="1110" y="920" width="100" height="70" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1szatrl_di" bpmnElement="Flow_1szatrl">
+        <di:waypoint x="1960" y="612" />
+        <di:waypoint x="1960" y="590" />
+        <di:waypoint x="700" y="590" />
+        <di:waypoint x="700" y="388" />
+      </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
