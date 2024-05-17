@@ -43,7 +43,7 @@ public class SzigRequest {
         HashMap<String, Boolean> variables = new HashMap<>();
 
         if (happyPath) {
-            variables.put("isGuardian", true);
+            variables.put("isGuardian", false);
             variables.put("photoPossible", true);
             variables.put("fingerprintPossible", true);
             variables.put("needTemporary", true);
