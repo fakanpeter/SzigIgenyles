@@ -47,7 +47,7 @@ public class SzigRequest {
             variables.put("photoPossible", true);
             variables.put("fingerprintPossible", true);
             variables.put("needTemporary", true);
-            variables.put("eSim", true);
+            variables.put("eSign", true);
             variables.put("wantESign", true);
             variables.put("pickUpInGO", true);
             variables.put("handInNeeded", true);
