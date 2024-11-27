@@ -13,13 +13,17 @@ import java.util.Random;
 public class SzigRequest {
     @Autowired
     private ZeebeClient zeebeClient;
-    private final boolean happyPath = false;
+    private final boolean happyPath = true;
     private final Random random = new Random();
 
-    private HashMap<String, Boolean> generateBooleanHashMap(String s) {
+    private final boolean errors = false;
+    private boolean mainRunning = false;
+    private boolean issuerRunning = false;
+
+    private HashMap<String, Boolean> generateBooleanHashMap(String s, int successChance) {
         HashMap<String, Boolean> variables = new HashMap<>();
 
-        if (this.happyPath || this.random.nextBoolean()) {
+        if (this.happyPath || this.random.nextInt(0, 100) < successChance) {
             variables.put(s, true);
         } else {
             variables.put(s, false);
@@ -27,6 +31,7 @@ public class SzigRequest {
 
         return variables;
     }
+
 
     private HashMap<String, Boolean> generateBooleanHashMap(String s, boolean b) {
         if (this.happyPath) {
@@ -40,6 +45,7 @@ public class SzigRequest {
 
     @ZeebeWorker(type = "SubmitApplication", autoComplete = true)
     public void SubmitApplication() {
+        Sleep(200);
         HashMap<String, Boolean> variables = new HashMap<>();
 
         if (happyPath) {
@@ -47,21 +53,21 @@ public class SzigRequest {
             variables.put("photoPossible", true);
             variables.put("fingerprintPossible", true);
             variables.put("needTemporary", true);
-            variables.put("eSign", true);
+            variables.put("eSim", true);
             variables.put("wantESign", true);
             variables.put("pickUpInGO", true);
             variables.put("handInNeeded", true);
             variables.put("isDocumentRequired", true);
         } else {
-            variables.put("isGuardian", random.nextBoolean());
-            variables.put("photoPossible", random.nextBoolean());
-            variables.put("fingerprintPossible", random.nextBoolean());
-            variables.put("needTemporary", random.nextBoolean());
-            variables.put("eSim", random.nextBoolean());
-            variables.put("wantESign", random.nextBoolean());
-            variables.put("pickUpInGO", random.nextBoolean());
-            variables.put("handInNeeded", random.nextBoolean());
-            variables.put("isDocumentRequired", random.nextBoolean());
+            variables.put("isGuardian", random.nextInt(0, 100) < 30);
+            variables.put("photoPossible", random.nextInt(0, 100) < 95);
+            variables.put("fingerprintPossible", random.nextInt(0, 100) < 90);
+            variables.put("needTemporary", random.nextInt(0, 100) < 50);
+            variables.put("eSim", random.nextInt(0, 100) < 85);
+            variables.put("wantESign", random.nextInt(0, 100) < 40);
+            variables.put("pickUpInGO", random.nextInt(0, 100) < 10);
+            variables.put("handInNeeded", random.nextInt(0, 100) < 90);
+            variables.put("isDocumentRequired", random.nextInt(0, 100) < 50);
         }
 
         zeebeClient.newPublishMessageCommand()
@@ -69,58 +75,77 @@ public class SzigRequest {
                 .correlationKey("applicationIn")
                 .variables(variables)
                 .send();
+        UnexpectedEvent(1);
     }
 
 
     @ZeebeWorker(type = "CheckApplication", autoComplete = true)
     public HashMap<String, Boolean> CheckApplication() {
-        return generateBooleanHashMap("isIdentityOK");
+        Sleep(200);
+        mainRunning = true;
+        UnexpectedEvent(1);
+        return generateBooleanHashMap("isIdentityOK", 80);
     }
 
     @ZeebeWorker(type = "IdentificatePerson", autoComplete = true)
     public HashMap<String, Boolean> IdentifyPerson() {
-        return generateBooleanHashMap("isGuardianIdentityOK");
+        Sleep(200);
+        UnexpectedEvent(1);
+        return generateBooleanHashMap("isGuardianIdentityOK", 80);
     }
 
     @ZeebeWorker(type = "CheckDeclaration", autoComplete = true)
     public HashMap<String, Boolean> CheckDeclaration() {
-        return generateBooleanHashMap("isDeclarationOK");
+        UnexpectedEvent(1);
+        return generateBooleanHashMap("isDeclarationOK", 99);
     }
 
     @ZeebeWorker(type = "CheckIds", autoComplete = true)
     public HashMap<String, Boolean> CheckIds() {
-        HashMap<String, Boolean> variables = generateBooleanHashMap("isIdOK");
+        Sleep(200);
+        HashMap<String, Boolean> variables = generateBooleanHashMap("isIdOK", 87);
         String s = "idMatch";
 
-        if (happyPath || this.random.nextBoolean()) {
+        if (happyPath || this.random.nextInt(0, 100) < 96) {
             variables.put(s, true);
         } else {
             variables.put(s, false);
         }
+        UnexpectedEvent(2);
+
         return variables;
     }
 
     @ZeebeWorker(type = "NotifyClient", autoComplete = true)
-    public void NotifyClient(@Variable Boolean isIdOK) {
+    public void NotifyClient() {
+        Sleep(200);
         zeebeClient.newPublishMessageCommand()
                 .messageName("NotifyClient")
                 .correlationKey("notified")
-                .variables(generateBooleanHashMap("isIdOK", isIdOK))
+                .variables(generateBooleanHashMap("accepted", true))
                 .send();
+        UnexpectedEvent(1);
     }
 
     @ZeebeWorker(type = "CheckFormat", autoComplete = true)
     public HashMap<String, Boolean> CheckFormat() {
-        return generateBooleanHashMap("isFormatOK");
+        Sleep(200);
+        UnexpectedEvent(1);
+        return generateBooleanHashMap("isFormatOK", 90);
     }
 
     @ZeebeWorker(type = "CheckContent", autoComplete = true)
     public HashMap<String, Boolean> CheckContent() {
-        return generateBooleanHashMap("isContentOK");
+        Sleep(200);
+        UnexpectedEvent(0);
+        return generateBooleanHashMap("isContentOK", 60);
     }
 
     @ZeebeWorker(type = "RequestInformation", autoComplete = true)
     public void RequestInformation() {
+        Sleep(200);
+        mainRunning = false;
+        UnexpectedEvent(3);
         zeebeClient.newPublishMessageCommand()
                 .messageName("DeclinedRequest")
                 .correlationKey("declined")
@@ -129,30 +154,46 @@ public class SzigRequest {
 
     @ZeebeWorker(type = "CheckPhoto", autoComplete = true)
     public HashMap<String, Boolean> CheckPhoto() {
-        return generateBooleanHashMap("isPhotoOK");
+        Sleep(200);
+        UnexpectedEvent(0);
+        return generateBooleanHashMap("isPhotoOK", 20);
     }
 
     @ZeebeWorker(type = "TakeFingerprint", autoComplete = true)
     public HashMap<String, Boolean> TakeFingerprint() {
-        return generateBooleanHashMap("isFingerprintOK");
+        Sleep(200);
+        UnexpectedEvent(1);
+        return generateBooleanHashMap("isFingerprintOK", 85);
     }
 
     @ZeebeWorker(type = "CheckSignature", autoComplete = true)
     public HashMap<String, Boolean> CheckSignature() {
-        return generateBooleanHashMap("isSignatureOK");
+        Sleep(200);
+        UnexpectedEvent(0);
+        return generateBooleanHashMap("isSignatureOK", 85);
     }
 
     @ZeebeWorker(type = "ForwardRequest", autoComplete = true)
     public void ForwardRequest(@Variable Boolean pickUpInGO) {
+        Sleep(200);
         zeebeClient.newPublishMessageCommand()
                 .messageName("ForwardRequest")
                 .correlationKey("forward")
                 .variables(generateBooleanHashMap("pickUpInGO", pickUpInGO))
-                .send();
+                .send()
+                .join();
+        issuerRunning = true;
+        if (!pickUpInGO) {
+            mainRunning = false;
+        }
+        UnexpectedEvent(2);
     }
 
     @ZeebeWorker(type = "ShipIDCard", autoComplete = true)
     public void ShipIDCard() {
+        Sleep(200);
+        mainRunning = false;
+        UnexpectedEvent(4);
         zeebeClient.newPublishMessageCommand()
                 .messageName("ShipIDCard")
                 .correlationKey("sent")
@@ -161,6 +202,9 @@ public class SzigRequest {
 
     @ZeebeWorker(type = "DocumentArrivedToGO", autoComplete = true)
     public void DocumentArrivedToGO() {
+        Sleep(200);
+        issuerRunning = false;
+        UnexpectedEvent(1);
         zeebeClient.newPublishMessageCommand()
                 .messageName("DocumentArrivedToGO")
                 .correlationKey("arrived")
@@ -169,6 +213,9 @@ public class SzigRequest {
 
     @ZeebeWorker(type = "Post", autoComplete = true)
     public void Post() {
+        Sleep(200);
+        issuerRunning = false;
+        UnexpectedEvent(4);
         zeebeClient.newPublishMessageCommand()
                 .messageName("Post")
                 .correlationKey("arrived")
@@ -177,10 +224,62 @@ public class SzigRequest {
 
     @ZeebeWorker(type = "InappropriateID", autoComplete = true)
     public void InappropriateID() {
+        Sleep(200);
+        UnexpectedEvent(1);
         zeebeClient.newPublishMessageCommand()
                 .messageName("NotifyClient")
                 .correlationKey("notified")
-                .variables(generateBooleanHashMap("isIdOK", false))
+                .variables(generateBooleanHashMap("accepted",   false))
                 .send();
+    }
+
+    @ZeebeWorker(type = "EndMain", autoComplete = true)
+    public void EndMain() {
+        if (mainRunning) {
+            zeebeClient.newPublishMessageCommand()
+                    .messageName("EndMain")
+                    .correlationKey("EndMain")
+                    .send();
+        }
+    }
+
+    @ZeebeWorker(type = "EndClient", autoComplete = true)
+    public void EndClient() {
+        zeebeClient.newPublishMessageCommand()
+                .messageName("EndClient")
+                .correlationKey("EndClient")
+                .send();
+    }
+
+    @ZeebeWorker(type = "EndIssuer", autoComplete = true)
+    public void EndIssuer() {
+        if (issuerRunning) {
+            zeebeClient.newPublishMessageCommand()
+                    .messageName("EndIssuer")
+                    .correlationKey("EndIssuer")
+                    .send();
+        }
+    }
+
+    private void Sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void UnexpectedEvent(int successRate) {
+        if (random.nextInt(0, 100) < successRate && errors) {
+
+            Sleep(1000);
+
+            System.out.println("Interrupted");
+            zeebeClient.newPublishMessageCommand()
+                    .messageName("UnexpectedEvent")
+                    .correlationKey("UnexpectedEvent")
+                    .send()
+                    .join();
+        }
     }
 }
