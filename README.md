@@ -1,6 +1,6 @@
 # Személyi Igazolvány Igénylés Szimuláció
 
-Ez a repository a személyi igazolvány igénylés szimulációjának automatizálására készült. A program Maven használatával készült, és a **Spring Boot** keretrendszerre épül. A BPMN folyamatok kezelésére a Camunda platformot használja, és a megadott folyamatdiagramot dolgozza fel.
+Ez a repository a személyi igazolvány igénylés szimulációjának automatizálására készült. A program Maven használatával készült, és a **Spring Boot** keretrendszerre épül. A BPMN folyamatok kezelésére a Camunda platformot használja, és a megadott folyamatdiagramot dolgozza fel. A program Windows operációs rendszeren készült, és volt futtatva.
 
 ## Előfeltételek
 
